@@ -7,6 +7,7 @@ public class InputController : MonoBehaviour
 {
     
     [Inject] IInputService _inputInputService;
+    [Inject] IPlatformGenerator _platformGenerator;
 
     private void Awake()
     {
@@ -17,7 +18,7 @@ public class InputController : MonoBehaviour
     {
         if(_inputInputService.IsTapDown)
         {
-            Debug.Log("[Input Given] Tap Down !");
+           
         }
     }
 }
