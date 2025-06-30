@@ -8,9 +8,9 @@ public class PlatformGenerationSettings : ScriptableObject
     [Range(5, 100)] public int initialPoolSize = 20;
 
     [Header("Geometry")]
-    public float platformWidth = 1.0f;   // X
-    public float platformDepth = 1.0f;   // Z  ← yeni
-    public float lateralOffset = 1.2f;   // X’te spawn aralığı
+    public float platformWidth = 1.0f;   
+    public float platformDepth = 1.0f;   
+    public float lateralOffset = 2f;   
 
     [Header("Perfect Cut")]
     [Tooltip("Tolerance for perfect cut")]

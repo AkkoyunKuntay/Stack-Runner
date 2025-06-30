@@ -7,9 +7,9 @@ public interface IPlatformGenerator
 {
     public void Initialize() { Debug.Log("[PlatformGeneratorService] has been initialized."); }
     PlatformView SpawnFirst();
-    PlatformView SpawnNext(bool spawnRight);
+    PlatformView SpawnNext(bool spawnRight, float width);
     bool IsPerfectCut(float delta);
-    float CurrentDirectionSign { get; }   // +1 = right, -1 = left
+    int CurrentDirectionSign { get; }   // +1 = right, -1 = left
 }
 public class PlatformGeneratorService : IPlatformGenerator
 {
@@ -39,29 +39,27 @@ public class PlatformGeneratorService : IPlatformGenerator
         return _lastPlatform;
     }
 
-    public PlatformView SpawnNext(bool spawnRight)
+    public PlatformView SpawnNext(bool spawnRight, float width)
     {
         _dirSign = spawnRight ? 1 : -1;
 
-        // ① X, köke göre sabit ±offset
         float x = _root.position.x + _dirSign * _settings.lateralOffset;
-
-        // ② Z, bir öncekinin derinliği kadar ileri
         float z = _lastPlatform.transform.position.z + _settings.platformDepth;
 
         Vector3 spawnPos = new Vector3(x, _root.position.y, z);
 
         _lastPlatform = GetFromPool();
-        _lastPlatform.Init(_settings.platformWidth,
-                   _settings.platformDepth,
-                   spawnPos, spawnRight);
+        _lastPlatform.Init(width,                       
+                           _settings.platformDepth,
+                           spawnPos,
+                           spawnRight);
         return _lastPlatform;
     }
 
     public bool IsPerfectCut(float delta) =>
         Mathf.Abs(delta) <= _settings.perfectTolerance;
 
-    public float CurrentDirectionSign => _dirSign;
+    public int CurrentDirectionSign => _dirSign;
 
 
     #region ObjectPool Helpers
