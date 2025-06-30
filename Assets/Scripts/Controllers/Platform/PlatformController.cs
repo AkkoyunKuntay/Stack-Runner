@@ -22,18 +22,19 @@ public class PlatformController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (_gameStateService.currentState != GameState.None) return;
+        if (_gameStateService.currentState != GameState.GamePlay) return;
         if (!_inputService.IsTapDown) return;
 
-        // 1) hareketi durdur
+        
         currentPlatform.GetComponent<PlatformModel>().Stop();
-        // 2) deltaX ve kesme
+        
         if (!TryCut(basePlatform, currentPlatform))
         {
             Debug.Log("GAME OVER");
+            _gameStateService.SetState(GameState.Failed);
             return;
         }
-        // 3) base’i güncelle, yeni platform üret
+        
         basePlatform = currentPlatform;
         currentPlatform = _platformGenerator.SpawnNext(Random.value > .5f, basePlatform.Width);
         StartMoving(currentPlatform);

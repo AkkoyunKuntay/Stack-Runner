@@ -2,8 +2,9 @@ using Unity.VisualScripting;
 using UnityEngine;
 using System;
 using Zenject;
+using UnityEngine.SceneManagement;
 
-public enum GameState { None, Start, GamePlay, Success, Failed }
+public enum GameState { None, GamePlay, Success, Failed }
 
 public interface IGameStateService
 {
@@ -25,7 +26,7 @@ public class GameStateService : IGameStateService
     }
     public void Initialize() 
     {
-        SetState(GameState.Start);
+        SetState(GameState.None);
         Debug.Log("[GameStateService] has been initialized");
     } 
 
@@ -41,7 +42,8 @@ public class GameStateService : IGameStateService
     public void Restart()
     {
         currentState = GameState.None;
-        SetState(GameState.Start);
+        SetState(GameState.None);
+        SceneManager.LoadScene(0);
     }
 }
 

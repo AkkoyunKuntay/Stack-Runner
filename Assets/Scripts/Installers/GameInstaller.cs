@@ -1,3 +1,4 @@
+using UI;
 using UnityEngine;
 using Zenject;
 
@@ -16,6 +17,9 @@ public class GameInstaller : MonoInstaller
         Container.Bind<Transform>().WithId("PlatformRoot").FromInstance(platformRoot).AsSingle();
         Container.Bind<PlatformGenerationSettings>().FromInstance(platformSettings).AsSingle();
         Container.Bind<IPlatformGenerator>().To<PlatformGeneratorService>().AsSingle();
+
+        //UI
+        Container.BindInterfacesTo<UIService>().FromComponentInHierarchy().AsSingle();
 
         //GameLoop
         Container.Bind<IGameStateService>().To<GameStateService>().AsSingle();
