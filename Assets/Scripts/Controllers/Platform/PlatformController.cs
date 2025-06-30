@@ -5,6 +5,7 @@ public class PlatformController : MonoBehaviour
 {
     [Inject] IPlatformGenerator _platformGenerator;
     [Inject] IInputService _inputService;
+    [Inject] IGameStateService _gameStateService;
 
     [Header("Debug")]
     [SerializeField] private PlatformView basePlatform;
@@ -13,16 +14,15 @@ public class PlatformController : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
-        _platformGenerator.Initialize();
         basePlatform = _platformGenerator.SpawnFirst();
         currentPlatform = _platformGenerator.SpawnNext(Random.value > .5f, basePlatform.Width);
         StartMoving(currentPlatform);
-
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (_gameStateService.currentState != GameState.None) return;
         if (!_inputService.IsTapDown) return;
 
         // 1) hareketi durdur

@@ -5,7 +5,6 @@ using Zenject;
 
 public interface IPlatformGenerator
 {
-    public void Initialize() { Debug.Log("[PlatformGeneratorService] has been initialized."); }
     PlatformView SpawnFirst();
     PlatformView SpawnNext(bool spawnRight, float width);
     bool IsPerfectCut(float delta);
@@ -28,8 +27,9 @@ public class PlatformGeneratorService : IPlatformGenerator
         _settings = settings;
         _root = root;
         PrewarmPool();
+        Initialize();
     }
-
+    private void Initialize() { Debug.Log("[PlatformGeneratorService] has been initialized."); }
     public PlatformView SpawnFirst()
     {
         Vector3 pos = _root.position;
@@ -38,7 +38,6 @@ public class PlatformGeneratorService : IPlatformGenerator
 
         return _lastPlatform;
     }
-
     public PlatformView SpawnNext(bool spawnRight, float width)
     {
         _dirSign = spawnRight ? 1 : -1;
@@ -55,10 +54,8 @@ public class PlatformGeneratorService : IPlatformGenerator
                            spawnRight);
         return _lastPlatform;
     }
-
     public bool IsPerfectCut(float delta) =>
         Mathf.Abs(delta) <= _settings.perfectTolerance;
-
     public int CurrentDirectionSign => _dirSign;
 
 

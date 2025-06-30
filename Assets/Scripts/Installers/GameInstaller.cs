@@ -7,6 +7,8 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private Transform platformRoot;
     public override void InstallBindings()
     {
+        
+
         // Input
         Container.Bind<IInputService>().To<InputService>().AsSingle();
 
@@ -15,6 +17,8 @@ public class GameInstaller : MonoInstaller
         Container.Bind<PlatformGenerationSettings>().FromInstance(platformSettings).AsSingle();
         Container.Bind<IPlatformGenerator>().To<PlatformGeneratorService>().AsSingle();
 
+        //GameLoop
+        Container.Bind<IGameStateService>().To<GameStateService>().AsSingle();
 
 
     }

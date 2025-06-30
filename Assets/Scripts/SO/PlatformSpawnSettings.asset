@@ -18,4 +18,4 @@ MonoBehaviour:
   platformWidth: 1
   platformDepth: 1
   lateralOffset: 2
-  perfectTolerance: 0.05
+  perfectTolerance: 0.1
