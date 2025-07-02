@@ -6,7 +6,7 @@ public interface IPlatformGeneratorService
 {
     PlatformView SpawnFirstPlatform();                             
     PlatformView SpawnNextPlatform(bool spawnRight, float width);  
-    PlatformView SpawnFinalPlatform(float width);                  
+    PlatformView SpawnFinalPlatform(float width);
     void ResetForNewLevel(PlatformView newBase);          
 
     Transform FinalTransform { get; }                              
@@ -28,6 +28,7 @@ public class PlatformGeneratorService : IPlatformGeneratorService
     PlatformView _final;               
     int _dir = 1;                      
     int _spawned = 0;
+    int matIndex = 0;
 
     #region Constructor
     [Inject]
@@ -66,6 +67,7 @@ public class PlatformGeneratorService : IPlatformGeneratorService
 
         _last = GetFromPool();
         _last.Init(width, _platformGenerationSettings.platformDepth, pos, spawnRight);
+        ApplyPlatformMaterial(_last);
         return _last;
     }
 
@@ -81,7 +83,15 @@ public class PlatformGeneratorService : IPlatformGeneratorService
 
         return _final;
     }
-
+    PlatformView ApplyPlatformMaterial(PlatformView view)
+    {
+        if (_platformGenerationSettings.materials.Count > 0)
+        {
+            view.ApplyMaterial(_platformGenerationSettings.materials[matIndex]);
+            matIndex = (matIndex + 1) % _platformGenerationSettings.materials.Count; 
+        }
+        return view;
+    }
     public void ResetForNewLevel(PlatformView newBase)
     {
         _last = newBase;

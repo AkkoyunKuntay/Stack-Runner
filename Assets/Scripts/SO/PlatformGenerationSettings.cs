@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 [CreateAssetMenu(menuName = "StackRunner/Platform Generator Settings")]
 public class PlatformGenerationSettings : ScriptableObject
@@ -12,7 +13,10 @@ public class PlatformGenerationSettings : ScriptableObject
     [Header("Geometry")]
     public float platformWidth = 1.0f;   
     public float platformDepth = 1.0f;   
-    public float lateralOffset = 2f;   
+    public float lateralOffset = 2f;
+
+    [Header("Materials")]
+    public List<Material> materials;
 
     [Header("Perfect Cut")]
     [Tooltip("Tolerance for perfect cut")]

@@ -7,8 +7,9 @@ using DG.Tweening;
 public enum CamType { Start, Gameplay, Win, Fail }
 public interface ICameraService
 {
-    void Shake(float duration);
-    void OrbitAround(Transform target, float duration);
+    void OrbitAround(float duration);
+    void StopOrbit();                
+
 }
 
 public class CameraService : MonoBehaviour, ICameraService,IInitializable
@@ -22,11 +23,11 @@ public class CameraService : MonoBehaviour, ICameraService,IInitializable
     [Header("Debug")]
     [SerializeField] CinemachineVirtualCamera currentCamera;
 
-    [Header("Impulse")]
-    [SerializeField] CinemachineImpulseSource impulse;
-
     [SerializeField] int activePriority = 50;
     [SerializeField] int idlePriority = 10;
+
+    Tween _orbitTween;
+    CinemachineOrbitalTransposer _orb;
 
     [Inject] IGameFlowService _gameFlowService;
 
@@ -41,8 +42,28 @@ public class CameraService : MonoBehaviour, ICameraService,IInitializable
 
         Debug.Log("[CameraService] has been initialized.");
     }
-    private void OnLevelStartedEvent() => SetActiveCamera(CamType.Gameplay);
-    private void OnLevelSuccessEvent() => SetActiveCamera(CamType.Win);
+    private void OnLevelStartedEvent()
+    {
+        SetActiveCamera(CamType.Gameplay);
+        StopOrbit();
+    }
+    private void OnLevelSuccessEvent()
+    {
+        SetActiveCamera(CamType.Win);
+        if (_orbitTween != null && _orbitTween.IsActive()) return; 
+
+        _orb = currentCamera.GetCinemachineComponent<CinemachineOrbitalTransposer>();
+        if (_orb == null) return;
+
+        _orbitTween = DOTween.To(
+                          () => _orb.m_XAxis.Value,
+                          x => _orb.m_XAxis.Value = x,
+                          360f,              
+                          3f)                
+                      .SetEase(Ease.Linear)
+                      .SetRelative()        
+                      .SetLoops(-1, LoopType.Restart);
+    }
     private void OnLevelFailedEvent() => SetActiveCamera(CamType.Fail);
     private void SetActiveCamera(CamType type)
     {
@@ -70,10 +91,9 @@ public class CameraService : MonoBehaviour, ICameraService,IInitializable
 
     }
 
-  
     #region ICameraService
 
-    public void OrbitAround(Transform target, float duration)
+    public void OrbitAround(float duration)
     {
         var v = currentCamera.GetCinemachineComponent<CinemachineOrbitalTransposer>();
         if (v == null) return;
@@ -81,13 +101,14 @@ public class CameraService : MonoBehaviour, ICameraService,IInitializable
         DOTween.To(() => v.m_XAxis.Value,
                    x => v.m_XAxis.Value = x,
                    start + 360,
-                   duration).SetEase(Ease.Linear);
+                   duration).SetEase(Ease.Linear).SetLoops(-1,LoopType.Restart);
     }
-    public void Shake(float duration)
+    public void StopOrbit()
     {
-        Debug.Log("Shake");
+        if (_orbitTween == null) return;
+        _orbitTween.Kill();
+        _orbitTween = null;
     }
-
     #endregion
 }
 

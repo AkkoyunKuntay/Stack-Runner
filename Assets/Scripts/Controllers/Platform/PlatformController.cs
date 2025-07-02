@@ -77,12 +77,12 @@ public class PlatformController : MonoBehaviour
         float dx = cur.transform.position.x - prev.transform.position.x;
         if (Mathf.Abs(dx) >= prev.Width)
         {
-            _audioService.PlayCut(false);   // kötü kesim → reset
+            _audioService.PlayCut(false);  
             return false;
         }
 
         bool perfect = _platformGeneratorService.IsPerfectCut(dx);
-        _audioService.PlayCut(perfect);     // good/perfect → pitch artar veya aynı kalır
+        _audioService.PlayCut(perfect);     
 
         if (Mathf.Abs(dx) >= prev.Width) return false;
 

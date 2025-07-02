@@ -19,6 +19,8 @@ public class AudioService : MonoBehaviour, IAudioService, IInitializable
     AudioSource _src;
     float _currentPitch;
 
+    [Inject] IGameFlowService _gameService;
+
     public void Initialize()
     {
         _src = gameObject.AddComponent<AudioSource>();
@@ -26,25 +28,30 @@ public class AudioService : MonoBehaviour, IAudioService, IInitializable
         _src.clip = cutSfx;
 
         _currentPitch = basePitch;
+        _gameService.LevelStartedEvent += ResetPitch;
     }
 
     public void PlayCut(bool isPerfect)
     {
         if (isPerfect) 
         {
-            _currentPitch = Mathf.Min(_currentPitch + stepPitch, maxPitch); // başarılı & zamanlaması iyi
-            Debug.Log("başarılı & zamanlaması iyi ses");
+            _currentPitch = Mathf.Min(_currentPitch + stepPitch, maxPitch); 
+            
         }          
            
         else
         {
-            _currentPitch = basePitch;// kötü zamanlama, pitch reset
-            Debug.Log("kötü zamanlama sesi");
+            ResetPitch();
+            
         }  
         
 
         _src.pitch = _currentPitch;
-        //_src.PlayOneShot(cutSfx);
+        _src.PlayOneShot(cutSfx);
+    }
+    public void ResetPitch()
+    {
+        _currentPitch = basePitch;
     }
 }
 
