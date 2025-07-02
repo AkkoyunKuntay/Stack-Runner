@@ -4,8 +4,6 @@ using Zenject;
 public interface IInputService
 {
     bool IsTapDown { get; }
-   
-
 }
 
 public class InputService : IInputService,IInitializable

@@ -14,7 +14,7 @@ public interface IGameFlowService
     bool IsLevelSuccessful { get; }
     void StartGame();
     void EndGame(bool success);
-    void NextStage();        // build-index ilerletir
+    void NextStage();
     void RestartStage();
 }
 public class GameService : MonoBehaviour, IGameFlowService, IInitializable
@@ -87,7 +87,7 @@ public class GameService : MonoBehaviour, IGameFlowService, IInitializable
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    /* ------------------ • YARDIMCI • ------------------ */
+    #region Helper Methods
     int CalcNextBuildIndex()
     {
         bool rnd = PlayerPrefs.GetInt(randomizeStagesKey, 0) == 1;
@@ -109,6 +109,6 @@ public class GameService : MonoBehaviour, IGameFlowService, IInitializable
     {
         return Random.Range(randomLevelOffset, SceneManager.sceneCountInBuildSettings);
     }
-       
+    #endregion
 
 }

@@ -39,12 +39,12 @@ public class PlayerController : MonoBehaviour
     {
         if (falling)
         {
-            // Sadece XZ düzleminde ileri yürüt, Y’yi fiziğe bırak
+            
             Vector3 desiredDestination = new(fallTarget.x, transform.position.y, fallTarget.z);
 
             transform.position = Vector3.MoveTowards(
                                     transform.position, desiredDestination, speed * Time.deltaTime);
-            return;    // normal MoveTowards çalışmasın
+            return;
         }
 
 

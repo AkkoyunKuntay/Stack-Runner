@@ -108,18 +108,16 @@ public class PlatformGeneratorService : IPlatformGeneratorService
         for (int i = 0; i < _platformGenerationSettings.initialPoolSize; i++)
             ReturnToPool(CreateNew());
     }
-
     PlatformView GetFromPool()
     {
-        var v = _pool.Count > 0 ? _pool.Dequeue() : CreateNew();
-        v.gameObject.SetActive(true);
-        return v;
+        var platformView = _pool.Count > 0 ? _pool.Dequeue() : CreateNew();
+        platformView.gameObject.SetActive(true);
+        return platformView;
     }
-
-    void ReturnToPool(PlatformView v)
+    void ReturnToPool(PlatformView platformView)
     {
-        v.gameObject.SetActive(false);
-        _pool.Enqueue(v);
+        platformView.gameObject.SetActive(false);
+        _pool.Enqueue(platformView);
     }
 
     PlatformView CreateNew() => InstantiatePrefab(_platformGenerationSettings.platformPrefab.gameObject, _root.position);

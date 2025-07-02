@@ -36,16 +36,12 @@ public class AudioService : MonoBehaviour, IAudioService, IInitializable
         if (isPerfect) 
         {
             _currentPitch = Mathf.Min(_currentPitch + stepPitch, maxPitch); 
-            
         }          
            
         else
         {
-            ResetPitch();
-            
+            ResetPitch();  
         }  
-        
-
         _src.pitch = _currentPitch;
         _src.PlayOneShot(cutSfx);
     }

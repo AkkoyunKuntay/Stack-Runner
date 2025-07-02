@@ -27,7 +27,7 @@ public class GameInstaller : MonoInstaller
         // Audio
         Container.BindInterfacesAndSelfTo<AudioService>().FromComponentInHierarchy().AsSingle().NonLazy();
 
-        /* Level difficulty */
+        // Level difficulty
         Container.Bind<ILevelDifficultyService>().To<LevelDifficultyService>().AsSingle().NonLazy();
         Container.Bind<List<LevelDifficultyConfig>>().FromInstance(levelConfigs).AsSingle();
 
