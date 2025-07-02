@@ -1,60 +1,41 @@
 ﻿using UnityEngine;
-using DG.Tweening;
 using Zenject;
-using static UnityEditor.PlayerSettings;
-using System.Collections;
-
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] float speed = 4f;          
-    [SerializeField] float groundRay = 0.6f;    
-
+    [SerializeField] float speed = 4f;
     Rigidbody rb;
-    Transform target;                           
+    Transform target;
 
-    [Inject] IGameFlowService _gameFlowService;
+    [Inject] IGameFlowService _gameService;
+    [Inject] ILevelDifficultyService _levelService;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
-        PlatformController.OnBasePlatformChanged += OnBaseChanged;
+        PlatformController.OnBasePlatformChanged += targetTransform => target = targetTransform;
     }
-    void OnDestroy()
-    {
-        PlatformController.OnBasePlatformChanged -= OnBaseChanged;
-    }
-
-    void OnBaseChanged(Transform newBase)
-    {
-        target = newBase;
-    }
+    void OnDestroy() =>
+        PlatformController.OnBasePlatformChanged -= targetTransform => target = targetTransform;
 
     void Update()
     {
-        if (!_gameFlowService.IsLevelActive || target == null) return;
+        if (!_gameService.IsLevelActive || target == null) return;
 
-        Vector3 targetPosition = new Vector3(target.position.x, transform.position.y, target.position.z);
-        transform.position = Vector3.Lerp(transform.position, targetPosition, speed * Time.deltaTime);
+        Vector3 dest = new Vector3(target.position.x, transform.position.y, target.position.z);
 
-        if (!Physics.Raycast(transform.position, Vector3.down, groundRay))
-        {
-            _gameFlowService.EndGame(false);
-        }
+        Vector3 dir = (dest - transform.position).normalized;
+        transform.position = Vector3.MoveTowards(
+                                transform.position, dest, speed * Time.deltaTime);
     }
-    IEnumerator WaitAndWin()
+
+    void OnTriggerEnter(Collider other)
     {
-        //yield return new WaitUntil(() => _anim.GetCurrentAnimatorStateInfo(0).IsTag("Idle"));
-        yield return 2f;
-        _gameFlowService.EndGame(true);
-    }
-    private void OnTriggerEnter(Collider other)
-    {
-        if(other.transform.parent.TryGetComponent<PlatformView>(out PlatformView platform))
-        {
-            if (platform.isFinal) StartCoroutine(WaitAndWin());
-        }
+        if (!other.transform.parent.TryGetComponent(out PlatformView platform)) return;
+        if (!platform.isFinal) return;
+
+        _gameService.EndGame(true);
+        
     }
 }

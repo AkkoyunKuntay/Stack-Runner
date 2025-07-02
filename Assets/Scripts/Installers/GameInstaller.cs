@@ -25,14 +25,14 @@ public class GameInstaller : MonoInstaller
         Container.BindInterfacesTo<InputService>().AsSingle().NonLazy();
 
         /* Level difficulty */
-        Container.Bind<ILevelDifficultyService>().To<LevelDifficultyService>().AsSingle();
+        Container.Bind<ILevelDifficultyService>().To<LevelDifficultyService>().AsSingle().NonLazy();
         Container.Bind<List<LevelDifficultyConfig>>().FromInstance(levelConfigs).AsSingle();
 
 
         // Platform Generator
         Container.Bind<Transform>().WithId("PlatformRoot").FromInstance(platformRoot).AsSingle();
         Container.Bind<PlatformGenerationSettings>().FromInstance(platformSettings).AsSingle();
-        Container.Bind<IPlatformGenerator>().To<PlatformGeneratorService>().AsSingle();
+        Container.Bind<IPlatformGeneratorService>().To<PlatformGeneratorService>().AsSingle();
 
        
 

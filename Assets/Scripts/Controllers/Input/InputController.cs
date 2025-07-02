@@ -7,7 +7,7 @@ public class InputController : MonoBehaviour
 {
     
     [Inject] IInputService _inputInputService;
-    [Inject] IPlatformGenerator _platformGenerator;
+    [Inject] IPlatformGeneratorService _platformGenerator;
 
     private void Awake()
     {

@@ -1,9 +1,13 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
 using Zenject;
 
 public enum PanelTypes { Start, game, win, fail }
 public class UIService : MonoBehaviour, IInitializable
 {
+    [Header("Level Indicator")]
+    [SerializeField] private TextMeshProUGUI LevelText;
+
     [Header("Panel References")]
     [SerializeField] private CanvasVisibilityController startPanel;
     [SerializeField] private CanvasVisibilityController gamePanel;
@@ -12,6 +16,8 @@ public class UIService : MonoBehaviour, IInitializable
 
     [Header("Debug")]
     [SerializeField] CanvasVisibilityController activePanel;
+
+
 
     [Inject] private IGameFlowService _gameFlowService;
     [Inject] private ILevelDifficultyService _difficultyService;
@@ -31,9 +37,13 @@ public class UIService : MonoBehaviour, IInitializable
     {
         _difficultyService.NextLevel();
         _gameFlowService.NextStage();
+        SetLevelText();
     } 
     public void OnQuitButton() => Application.Quit();
-
+    private void SetLevelText()
+    {
+        LevelText.text =_difficultyService.GetLevelData(_difficultyService.CurrentLevelIndex).levelName;
+    }
     private void OnLevelStarted() => SetActivePanel(PanelTypes.game);
     private void OnLevelFailed() => SetActivePanel(PanelTypes.fail);
     private void OnLevelSuccessfull() => SetActivePanel(PanelTypes.win);

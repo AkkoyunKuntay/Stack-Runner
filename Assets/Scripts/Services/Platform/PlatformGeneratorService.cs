@@ -2,121 +2,122 @@
 using UnityEngine;
 using Zenject;
 
-public interface IPlatformGenerator
+public interface IPlatformGeneratorService
 {
-    PlatformView SpawnFirst();                              
-    PlatformView SpawnNext(bool spawnRight, float width);  
-    void SpawnFinal(float width);                   
-    bool IsPerfectCut(float delta);
-    int CurrentDirectionSign { get; }
-    Transform FinalTransform { get; }
+    PlatformView SpawnFirstPlatform();                             
+    PlatformView SpawnNextPlatform(bool spawnRight, float width);  
+    PlatformView SpawnFinalPlatform(float width);                  
     void ResetForNewLevel(PlatformView newBase);          
+
+    Transform FinalTransform { get; }                              
+    int CurrentDirectionSign { get; }                       
+    bool IsPerfectCut(float delta);                           
 }
 
-public class PlatformGeneratorService : IPlatformGenerator
+public class PlatformGeneratorService : IPlatformGeneratorService
 {
     [Header("DI")]
-    readonly PlatformGenerationSettings _platformGenerationSettings;
-    readonly DiContainer _container;
-    readonly Transform _root;
-    readonly ILevelDifficultyService _levelService;
+    readonly PlatformGenerationSettings _s;
+    readonly Transform _root;        
+    readonly DiContainer _c;
+    readonly ILevelDifficultyService _d;
 
-    [Header("Platform Pool")]
+    [Header("Object Pool")]
     readonly Queue<PlatformView> _pool = new();
-    PlatformView _lastPlatform;
-    int _dirSign = 1;
+    PlatformView _last;                
+    PlatformView _final;               
+    int _dir = 1;                      
     int _spawned = 0;
 
-    PlatformView _finalPlatform;
-    public PlatformView FinalPlatform => _finalPlatform;
-    public Transform FinalTransform => _finalPlatform ? _finalPlatform.transform : null;
-    
-
-
+    #region Constructor
     [Inject]
     public PlatformGeneratorService(
         PlatformGenerationSettings settings,
-        DiContainer container,
         [Inject(Id = "PlatformRoot")] Transform root,
+        [Inject] DiContainer container,
         ILevelDifficultyService difficulty)
     {
-        _platformGenerationSettings = settings;
-        _container = container;
+        _s = settings;
         _root = root;
-        _levelService = difficulty;
+        _c = container;
+        _d = difficulty;
 
-        Prewarm();
-        Debug.Log("[PlatformGenerator] has been initialized.");
+        PrewarmPool();
+        Debug.Log("[PlatformGeneratorService] has been initialized.");
     }
-
-    public void ResetForNewLevel(PlatformView newBase)        // ★ EKLE
-    {
-        _lastPlatform = newBase;     // bundan sonra SpawnNext bunun üzerinden hesaplar
-        _spawned = 1;           // base sayıldı
-    }
-    public PlatformView SpawnFirst()
+    #endregion
+ 
+    public PlatformView SpawnFirstPlatform()
     {
         _spawned = 1;
-
-        _lastPlatform = InstantiatePrefab(_platformGenerationSettings.startPrefab.gameObject, _root.position);
-        _lastPlatform.Init(_platformGenerationSettings.platformWidth, _platformGenerationSettings.platformDepth, _root.position, true);
-        return _lastPlatform;
+        _last = InstantiatePrefab(_s.startPrefab.gameObject, Vector3.zero);
+        _last.Init(_s.platformWidth, _s.platformDepth, Vector3.zero, true);
+        return _last;
     }
 
-    public PlatformView SpawnNext(bool spawnRight, float width)
+    public PlatformView SpawnNextPlatform(bool spawnRight, float width)
     {
         _spawned++;
+        _dir = spawnRight ? 1 : -1;
 
-        _dirSign = spawnRight ? 1 : -1;
-        float x = _root.position.x + _dirSign * _platformGenerationSettings.lateralOffset;
-        float z = _lastPlatform.transform.position.z + _platformGenerationSettings.platformDepth;
-        Vector3 desiredPos = new(x, _root.position.y, z);
+        float x = _root.position.x + _dir * _s.lateralOffset;
+        float z = _last.transform.position.z + _s.platformDepth;
+        Vector3 pos = new(x, _root.position.y, z);
 
-        _lastPlatform = GetFromPool();
-        _lastPlatform.Init(width, _platformGenerationSettings.platformDepth, desiredPos, spawnRight);
-        return _lastPlatform;
+        _last = GetFromPool();
+        _last.Init(width, _s.platformDepth, pos, spawnRight);
+        return _last;
     }
 
-    public void SpawnFinal(float width)
+    public PlatformView SpawnFinalPlatform(float width)
     {
-        float z = _root.position.z + _platformGenerationSettings.platformDepth *
-                  _levelService.NormalPlatformCount;
+        float z = _last.transform.position.z + _s.platformDepth * _d.NormalPlatformCount;
 
-        Vector3 desiredPos = new(_root.position.x, _root.position.y, z);
+        Vector3 pos = new(_root.position.x, _root.position.y, z);
 
-        _finalPlatform = InstantiatePrefab(_platformGenerationSettings.finalPrefab.gameObject, desiredPos);
+        _final = InstantiatePrefab(_s.finalPrefab.gameObject, pos);
+        _final.isFinal = true;
+        _final.Init(width, _s.platformDepth, pos, true);
 
-        _finalPlatform.Init(width, _platformGenerationSettings.platformDepth, desiredPos, true);
-
-        _finalPlatform.isFinal = true;
-        
+        return _final;
     }
 
-    public int CurrentDirectionSign => _dirSign;
-    public bool IsPerfectCut(float d) => Mathf.Abs(d) <= _platformGenerationSettings.perfectTolerance;
-
-    PlatformView InstantiatePrefab(GameObject prefab, Vector3 pos)
+    public void ResetForNewLevel(PlatformView newBase)
     {
-        var go = _container.InstantiatePrefab(prefab, pos, Quaternion.identity, _root);
-        return go.GetComponent<PlatformView>();
+        _last = newBase;
+        _spawned = 1;
     }
 
-    void Prewarm()
+    public Transform FinalTransform => _final ? _final.transform : null;
+    public int CurrentDirectionSign => _dir;
+    public bool IsPerfectCut(float d) => Mathf.Abs(d) <= _s.perfectTolerance;
+
+    #region ObjectPooling
+    void PrewarmPool()
     {
-        for (int i = 0; i < _platformGenerationSettings.initialPoolSize; i++)
-            ReturnToPool(Create());
+        for (int i = 0; i < _s.initialPoolSize; i++)
+            ReturnToPool(CreateNew());
     }
+
     PlatformView GetFromPool()
     {
-        var v = _pool.Count > 0 ? _pool.Dequeue() : Create();
+        var v = _pool.Count > 0 ? _pool.Dequeue() : CreateNew();
         v.gameObject.SetActive(true);
         return v;
     }
-    void ReturnToPool(PlatformView v) { v.gameObject.SetActive(false); _pool.Enqueue(v); }
-    PlatformView Create()
+
+    void ReturnToPool(PlatformView v)
     {
-        var go = _container.InstantiatePrefab(_platformGenerationSettings.platformPrefab.gameObject, _root);
-        go.SetActive(false);
+        v.gameObject.SetActive(false);
+        _pool.Enqueue(v);
+    }
+
+    PlatformView CreateNew() => InstantiatePrefab(_s.platformPrefab.gameObject, _root.position);
+
+    PlatformView InstantiatePrefab(GameObject prefab, Vector3 pos)
+    {
+        var go = _c.InstantiatePrefab(prefab, pos, Quaternion.identity, _root);
         return go.GetComponent<PlatformView>();
     }
+    #endregion
 }
