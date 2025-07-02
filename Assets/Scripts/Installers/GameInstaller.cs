@@ -24,10 +24,12 @@ public class GameInstaller : MonoInstaller
         // Input
         Container.BindInterfacesTo<InputService>().AsSingle().NonLazy();
 
+        // Audio
+        Container.BindInterfacesAndSelfTo<AudioService>().FromComponentInHierarchy().AsSingle().NonLazy();
+
         /* Level difficulty */
         Container.Bind<ILevelDifficultyService>().To<LevelDifficultyService>().AsSingle().NonLazy();
         Container.Bind<List<LevelDifficultyConfig>>().FromInstance(levelConfigs).AsSingle();
-
 
         // Platform Generator
         Container.Bind<Transform>().WithId("PlatformRoot").FromInstance(platformRoot).AsSingle();

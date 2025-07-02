@@ -17,10 +17,10 @@ public interface IPlatformGeneratorService
 public class PlatformGeneratorService : IPlatformGeneratorService
 {
     [Header("DI")]
-    readonly PlatformGenerationSettings _s;
+    readonly PlatformGenerationSettings _platformGenerationSettings;
     readonly Transform _root;        
-    readonly DiContainer _c;
-    readonly ILevelDifficultyService _d;
+    readonly DiContainer _container;
+    readonly ILevelDifficultyService _levelService;
 
     [Header("Object Pool")]
     readonly Queue<PlatformView> _pool = new();
@@ -37,10 +37,10 @@ public class PlatformGeneratorService : IPlatformGeneratorService
         [Inject] DiContainer container,
         ILevelDifficultyService difficulty)
     {
-        _s = settings;
+        _platformGenerationSettings = settings;
         _root = root;
-        _c = container;
-        _d = difficulty;
+        _container = container;
+        _levelService = difficulty;
 
         PrewarmPool();
         Debug.Log("[PlatformGeneratorService] has been initialized.");
@@ -50,8 +50,8 @@ public class PlatformGeneratorService : IPlatformGeneratorService
     public PlatformView SpawnFirstPlatform()
     {
         _spawned = 1;
-        _last = InstantiatePrefab(_s.startPrefab.gameObject, Vector3.zero);
-        _last.Init(_s.platformWidth, _s.platformDepth, Vector3.zero, true);
+        _last = InstantiatePrefab(_platformGenerationSettings.startPrefab.gameObject, Vector3.zero);
+        _last.Init(_platformGenerationSettings.platformWidth, _platformGenerationSettings.platformDepth, Vector3.zero, true);
         return _last;
     }
 
@@ -60,24 +60,24 @@ public class PlatformGeneratorService : IPlatformGeneratorService
         _spawned++;
         _dir = spawnRight ? 1 : -1;
 
-        float x = _root.position.x + _dir * _s.lateralOffset;
-        float z = _last.transform.position.z + _s.platformDepth;
+        float x = _root.position.x + _dir * _platformGenerationSettings.lateralOffset;
+        float z = _last.transform.position.z + _platformGenerationSettings.platformDepth;
         Vector3 pos = new(x, _root.position.y, z);
 
         _last = GetFromPool();
-        _last.Init(width, _s.platformDepth, pos, spawnRight);
+        _last.Init(width, _platformGenerationSettings.platformDepth, pos, spawnRight);
         return _last;
     }
 
     public PlatformView SpawnFinalPlatform(float width)
     {
-        float z = _last.transform.position.z + _s.platformDepth * _d.NormalPlatformCount;
+        float z = _last.transform.position.z + _platformGenerationSettings.platformDepth * _levelService.NormalPlatformCount;
 
         Vector3 pos = new(_root.position.x, _root.position.y, z);
 
-        _final = InstantiatePrefab(_s.finalPrefab.gameObject, pos);
+        _final = InstantiatePrefab(_platformGenerationSettings.finalPrefab.gameObject, pos);
         _final.isFinal = true;
-        _final.Init(width, _s.platformDepth, pos, true);
+        _final.Init(width, _platformGenerationSettings.platformDepth, pos, true);
 
         return _final;
     }
@@ -90,12 +90,12 @@ public class PlatformGeneratorService : IPlatformGeneratorService
 
     public Transform FinalTransform => _final ? _final.transform : null;
     public int CurrentDirectionSign => _dir;
-    public bool IsPerfectCut(float d) => Mathf.Abs(d) <= _s.perfectTolerance;
+    public bool IsPerfectCut(float d) => Mathf.Abs(d) <= _platformGenerationSettings.perfectTolerance;
 
     #region ObjectPooling
     void PrewarmPool()
     {
-        for (int i = 0; i < _s.initialPoolSize; i++)
+        for (int i = 0; i < _platformGenerationSettings.initialPoolSize; i++)
             ReturnToPool(CreateNew());
     }
 
@@ -112,11 +112,11 @@ public class PlatformGeneratorService : IPlatformGeneratorService
         _pool.Enqueue(v);
     }
 
-    PlatformView CreateNew() => InstantiatePrefab(_s.platformPrefab.gameObject, _root.position);
+    PlatformView CreateNew() => InstantiatePrefab(_platformGenerationSettings.platformPrefab.gameObject, _root.position);
 
     PlatformView InstantiatePrefab(GameObject prefab, Vector3 pos)
     {
-        var go = _c.InstantiatePrefab(prefab, pos, Quaternion.identity, _root);
+        var go = _container.InstantiatePrefab(prefab, pos, Quaternion.identity, _root);
         return go.GetComponent<PlatformView>();
     }
     #endregion

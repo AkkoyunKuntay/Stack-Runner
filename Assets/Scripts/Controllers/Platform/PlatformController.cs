@@ -8,6 +8,7 @@ public class PlatformController : MonoBehaviour
     [Inject] IGameFlowService _gameService;
     [Inject] ICameraService _cameraService;
     [Inject] ILevelDifficultyService _levelService;
+    [Inject] IAudioService _audioService;
 
     public static System.Action<Transform> OnBasePlatformChanged;
 
@@ -74,6 +75,15 @@ public class PlatformController : MonoBehaviour
     private bool CutSucceeded(PlatformView prev, PlatformView cur)
     {
         float dx = cur.transform.position.x - prev.transform.position.x;
+        if (Mathf.Abs(dx) >= prev.Width)
+        {
+            _audioService.PlayCut(false);   // kötü kesim → reset
+            return false;
+        }
+
+        bool perfect = _platformGeneratorService.IsPerfectCut(dx);
+        _audioService.PlayCut(perfect);     // good/perfect → pitch artar veya aynı kalır
+
         if (Mathf.Abs(dx) >= prev.Width) return false;
 
         float newW = prev.Width - Mathf.Abs(dx);
