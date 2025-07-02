@@ -1,88 +1,108 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Zenject;
 
 public class PlatformController : MonoBehaviour
 {
-    [Inject] IPlatformGenerator _platformGenerator;
+    [Inject] IPlatformGenerator _platformGeneratorService;
     [Inject] IInputService _inputService;
-    [Inject] IGameStateService _gameStateService;
+    [Inject] IGameFlowService _gameService;
+    [Inject] ICameraService _cameraService;
+    [Inject] ILevelDifficultyService _levelService;
 
-    [Header("Debug")]
-    [SerializeField] private PlatformView basePlatform;
-    [SerializeField] private PlatformView currentPlatform;
+    PlatformView basePlatform;
+    PlatformView currentPlatform;
+    int cutsDone = 0;
 
-    // Start is called before the first frame update
-    void Awake()
+    public static event Action<Transform> OnBasePlatformChanged;
+
+
+    void Awake() => StartLevel();
+    void OnEnable() => _levelService.OnLevelAdvanced += StartLevel;
+    void OnDisable() => _levelService.OnLevelAdvanced -= StartLevel;
+
+    void StartLevel()
     {
-        basePlatform = _platformGenerator.SpawnFirst();
-        currentPlatform = _platformGenerator.SpawnNext(Random.value > .5f, basePlatform.Width);
-        StartMoving(currentPlatform);
+        ClearAll();
+
+        // ❶ önceki bölümün finali sahnede mi?
+        if (_platformGeneratorService.FinalTransform != null &&
+            _platformGeneratorService.FinalTransform.gameObject.activeSelf)
+        {
+            basePlatform = _platformGeneratorService.FinalTransform.GetComponent<PlatformView>();
+
+            basePlatform.isFinal = false;                     // artık normal platform
+            _platformGeneratorService.ResetForNewLevel(basePlatform);        // ★ generator’a yeni base’i bildir
+        }
+        else
+        {
+            basePlatform = _platformGeneratorService.SpawnFirst();           // ilk defa oyuna girerken
+        }
+
+        _platformGeneratorService.SpawnFinal(basePlatform.Width);            // yeni final
+        cutsDone = 0;
+
+        currentPlatform = _platformGeneratorService.SpawnNext(true, basePlatform.Width);
+        Move(currentPlatform);
     }
 
-    // Update is called once per frame
+
     void Update()
     {
-        if (_gameStateService.currentState != GameState.GamePlay) return;
-        if (!_inputService.IsTapDown) return;
+        if (!_gameService.IsLevelActive || !_inputService.IsTapDown) return;
 
-        
         currentPlatform.GetComponent<PlatformModel>().Stop();
+
+        if (!CutSucceeded(basePlatform, currentPlatform))
+        { _gameService.EndGame(false); return; }
+
+        cutsDone++;
+
         
-        if (!TryCut(basePlatform, currentPlatform))
+        if (cutsDone >= _levelService.NormalPlatformCount - 1)
         {
-            Debug.Log("GAME OVER");
-            _gameStateService.SetState(GameState.Failed);
-            return;
+            // base hâlâ currentPlatform; final platformu hedef göster
+            // oyuncuya final hedefini ver
+            OnBasePlatformChanged?.Invoke(_platformGeneratorService.FinalTransform);   // ← DOĞRU
+
+            return;                               
         }
-        
+
         basePlatform = currentPlatform;
-        currentPlatform = _platformGenerator.SpawnNext(Random.value > .5f, basePlatform.Width);
-        StartMoving(currentPlatform);
+        OnBasePlatformChanged?.Invoke(basePlatform.transform);
+
+        currentPlatform = _platformGeneratorService.SpawnNext(UnityEngine.Random.value > .5f, basePlatform.Width);
+        Move(currentPlatform);
     }
 
-    void StartMoving(PlatformView view)
+    void Move(PlatformView v)
     {
-        var ctrl = view.GetComponent<PlatformModel>();
-        ctrl.Init(_platformGenerator.CurrentDirectionSign);
-        ctrl.Play();
+        var m = v.GetComponent<PlatformModel>();
+        m.Init(_platformGeneratorService.CurrentDirectionSign);
+        m.Play();
     }
 
-    public bool TryCut(PlatformView previousPlatform, PlatformView currentPlatform)
+    bool CutSucceeded(PlatformView prev, PlatformView cur)
     {
-        float delta = currentPlatform.transform.position.x - previousPlatform.transform.position.x;
-        float hangover = Mathf.Abs(delta);
-        float prevWidth = previousPlatform.Width;
+        float dx = cur.transform.position.x - prev.transform.position.x;
+        float hang = Mathf.Abs(dx);
+        if (hang >= prev.Width) return false;
 
-        if (hangover >= prevWidth)   
-            return false;
+        float newW = prev.Width - hang;
+        cur.Resize(newW);
 
-        float newWidth = prevWidth - hangover;
-        currentPlatform.Resize(newWidth);
+        float newX = prev.transform.position.x + dx * 0.5f;
+        cur.transform.position = new Vector3(newX, cur.transform.position.y, cur.transform.position.z);
 
-        /* Edge Matching */
-        float newCenterX = previousPlatform.transform.position.x + (delta * 0.5f);
-        currentPlatform.transform.position = new Vector3(
-            newCenterX,
-            currentPlatform.transform.position.y,
-            currentPlatform.transform.position.z);
-
-        /* Debris Spawning */
-        int dir = delta >= 0 ? 1 : -1; 
-        currentPlatform.SpawnDebris(hangover, dir);
-
-        /* Perfect control */
-        bool isPerfect = _platformGenerator.IsPerfectCut(delta);
-        if (isPerfect) 
-        {
-            //TODO: ScoreService increase score for perfectCut 
-            Debug.Log("PERFECT!");
-        }
-
-
-
-
-        return true;              
+        cur.SpawnDebris(hang, dx >= 0 ? 1 : -1);
+        return true;
     }
 
+    void ClearAll()
+    {
+        foreach (var v in FindObjectsOfType<PlatformView>())
+            if (!v.isFinal)                       
+                v.gameObject.SetActive(false);
+    }
 
 }

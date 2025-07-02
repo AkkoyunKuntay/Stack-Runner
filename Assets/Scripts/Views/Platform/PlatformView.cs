@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class PlatformView : MonoBehaviour
 {
+    public bool isFinal;
     [SerializeField] private Material debrisMat;
     public float Width => transform.localScale.x; 
     public float Depth => transform.localScale.z;

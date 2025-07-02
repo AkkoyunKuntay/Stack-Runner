@@ -11,14 +11,11 @@ public class InputController : MonoBehaviour
 
     private void Awake()
     {
-        _inputInputService.Initialize();
+
     }
     // Update is called once per frame
     void Update()
     {
-        if(_inputInputService.IsTapDown)
-        {
-           
-        }
+       
     }
 }

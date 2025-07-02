@@ -1,50 +1,63 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Zenject;
-using System;
 
-namespace UI
+public enum PanelTypes { Start, game, win, fail }
+public class UIService : MonoBehaviour, IInitializable
 {
-    public class UIService : MonoBehaviour, IInitializable, IDisposable
+    [Header("Panel References")]
+    [SerializeField] private CanvasVisibilityController startPanel;
+    [SerializeField] private CanvasVisibilityController gamePanel;
+    [SerializeField] private CanvasVisibilityController winPanel;
+    [SerializeField] private CanvasVisibilityController failPanel;
+
+    [Header("Debug")]
+    [SerializeField] CanvasVisibilityController activePanel;
+
+    [Inject] private IGameFlowService _gameFlowService;
+    [Inject] private ILevelDifficultyService _difficultyService;
+
+    public void Initialize()
     {
-        [Header("Panel References")]
-        [SerializeField] CanvasVisibilityController startPanel;
-        [SerializeField] CanvasVisibilityController gamePanel;
-        [SerializeField] CanvasVisibilityController winPanel;
-        [SerializeField] CanvasVisibilityController failPanel;
+        _gameFlowService.LevelStartedEvent += OnLevelStarted;
+        _gameFlowService.LevelFailedEvent += OnLevelFailed;
+        _gameFlowService.LevelSuccessEvent += OnLevelSuccessfull;
 
-        private readonly Dictionary<GameState, CanvasVisibilityController> _map =
-            new Dictionary<GameState, CanvasVisibilityController>();
+        Debug.Log("[UIService] has been initialized.");
+    }
 
-        [Inject] private IGameStateService _gameState;
+    public void OnStartButton() => _gameFlowService.StartGame();
+    public void OnRetryButton() => _gameFlowService.RestartStage();
+    public void OnNextButton() 
+    {
+        _difficultyService.NextLevel();
+        _gameFlowService.NextStage();
+    } 
+    public void OnQuitButton() => Application.Quit();
 
-        
-        public void Initialize()
+    private void OnLevelStarted() => SetActivePanel(PanelTypes.game);
+    private void OnLevelFailed() => SetActivePanel(PanelTypes.fail);
+    private void OnLevelSuccessfull() => SetActivePanel(PanelTypes.win);
+
+    private void SetActivePanel(PanelTypes type)
+    {
+        activePanel.Hide();
+        switch (type)
         {
-            _map[GameState.None] = startPanel;
-            _map[GameState.GamePlay] = gamePanel;
-            _map[GameState.Success] = winPanel;
-            _map[GameState.Failed] = failPanel;
- 
-            foreach (var p in _map.Values) p.Hide();
- 
-            HandleState(GameState.None, _gameState.currentState);
-            _gameState.OnStateChangedEvent += HandleState;
+            case PanelTypes.Start:
+                activePanel = startPanel;
+                break;
+            case PanelTypes.game:
+                activePanel = gamePanel;
+                break;
+            case PanelTypes.win:
+                activePanel = winPanel;
+                break;
+            case PanelTypes.fail:
+                activePanel = failPanel;
+                break;
+            default:
+                break;
         }
-
-        public void Dispose() =>
-            _gameState.OnStateChangedEvent -= HandleState;
-
-       
-        private void HandleState(GameState prev, GameState next)
-        {
-            if (_map.TryGetValue(prev, out var prevPanel)) prevPanel.Hide();
-            if (_map.TryGetValue(next, out var nextPanel)) nextPanel.Show();
-        }
-
-        public void OnStartButton() => _gameState.SetState(GameState.GamePlay);
-        public void OnRetryButton() => _gameState.Restart();          
-        public void OnNextButton() => _gameState.SetState(GameState.GamePlay);
-        public void OnQuitButton() => Application.Quit();
+        activePanel.Show();
     }
 }

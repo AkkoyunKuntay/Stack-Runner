@@ -12,9 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bc8199fc3786734bb3ebbb18eb409ec, type: 3}
   m_Name: PlatformSpawnSettings
   m_EditorClassIdentifier: 
+  startPrefab: {fileID: 2394735257739375040, guid: d877a9e821655fd4882e1cebe18c422a,
+    type: 3}
   platformPrefab: {fileID: 2394735257739375040, guid: ad757c1448deb04419d04bea8876fa1a,
     type: 3}
-  initialPoolSize: 10
+  finalPrefab: {fileID: 2394735257739375040, guid: 61c1db2e7fa1f8f4f8bd676a0f2a8297,
+    type: 3}
+  initialPoolSize: 15
   platformWidth: 1
   platformDepth: 1
   lateralOffset: 2
